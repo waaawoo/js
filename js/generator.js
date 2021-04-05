@@ -139,3 +139,107 @@ console.log(names);
 
 // ジェネレーターのデリゲーしょん
 // 二つのチームだった場合二つの別々のものをイテレートしていくには
+
+// ------------------------------- symbol.iterator ---------------------------------
+// for..ofループに入ったときの処理を明示する
+
+// testTにシンボルイテレータを設定する
+const testT = {
+  lead: "紀子",
+  tester: "タコこ",
+  // ---- testTにシンボルイテレータを設定する ----ここがきも
+  //動的なプロパティ [Key]: valueの形
+  [Symbol.iterator]: function* (){
+    // この中にyieldをかく
+    yield this.lead;
+    yield this.tester;
+  }
+}
+
+// function* TeamIterator2(team){
+//   yield team.lead;
+//   yield team.manager;
+//   yield team.engineer;
+//   // 直接testingTeamを指定できる
+//   yield* team.testT;
+// }
+
+// ある会社のエンジニアの開発チーム
+const engineeringTame2 = {
+  size: 3,
+  department: "開発部",
+  lead: '太郎',
+  manager: "花子",
+  engineer: "次郎",
+  testT,
+  //symbol.iteratorを使う
+  [Symbol.iterator]: function* (){
+    // yield this.department;
+    yield this.lead;
+    yield this.manager;
+    yield this.engineer;
+    yield* this.testT;
+  }
+};
+
+const names2 = [];
+// TeamIterator2を呼んだときシンボルイテレータを見つけたらyieldを探して出力
+// オブジェクトの中からシンボルイテレータを探す
+// その中にyield＊があればその中を見にいく
+// for..ofはsymboliteratorを見にいくもの
+// 配列は元々symboliteratorを持っている
+for(let name of engineeringTame2){
+  names2.push(name);
+}
+
+console.log(names2);
+// (5) ["太郎", "花子", "次郎", "紀子", "タコこ"]
+
+
+// 使い所
+// ツリー構造で見てみる
+// ツリー構造とは階層構造
+// 子ノードのコメントをイテレーションして行ける
+
+// コメントクラス
+// コメントとコメントに対するコメント
+class Comment{
+  constructor(content, children){
+    // 自身のコンテントはyieldする
+    this.content = content;
+    this.children = children;
+  }
+  // クラスにsymbol.iteratorを定義するには最初に*をつける
+  *[Symbol.iterator](){
+    // 自身のyield
+    yield this.content;
+    yield this.children;
+    // 子ノードがある場合は処理をする記述をする
+    // generatorの中ではfor..ofしか使えない
+    for(let child of this.children){
+      yield* child;
+    }
+  }
+}
+
+// テストデータ
+const children = [
+  new Comment("賛成",[]),
+  new Comment("反対",[]),
+  new Comment("クソがっ",[])
+];
+
+// 親コメントにchildrenで子コメントが配列である状態
+const tree = new Comment("非常に遺憾です", children);
+console.log(tree);
+
+//どこのノードかわからない場合の取得方法
+const values = [];
+
+// treeの構造全てを取り出し、valuesへ入れている
+for(let value of tree){
+  values.push(value);
+}
+
+console.log(values);
+// (8) ["非常に遺憾です", Array(3), "賛成", Array(0), "反対", Array(0), "クソがっ", Array(0)]
